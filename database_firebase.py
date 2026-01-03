@@ -120,7 +120,8 @@ class DatabaseFirebase:
             return None
     
     def save_message(self, sender: str, recipient: str, encrypted_content: str,
-                     encrypted_symmetric_key: str, message_hash: str, digital_signature: str) -> bool:
+                     encrypted_symmetric_key: str, message_hash: str, digital_signature: str, 
+                     subject: str = None) -> bool:
         """Save encrypted message"""
         try:
             messages_ref = self.db.collection('messages')
@@ -131,6 +132,8 @@ class DatabaseFirebase:
                 'encrypted_symmetric_key': encrypted_symmetric_key,
                 'message_hash': message_hash,
                 'digital_signature': digital_signature,
+                'is_read': False,
+                'subject': subject,
                 'created_at': firestore.SERVER_TIMESTAMP
             })
             return True
@@ -149,7 +152,7 @@ class DatabaseFirebase:
             for doc in docs:
                 data = doc.to_dict()
                 # Convert to tuple format compatible with SQLite version
-                # (id, sender, recipient, encrypted_content, encrypted_symmetric_key, message_hash, digital_signature, created_at)
+                # (id, sender, recipient, encrypted_content, encrypted_symmetric_key, message_hash, digital_signature, is_read, subject, created_at)
                 results.append((
                     doc.id,  # Firestore document ID
                     data.get('sender'),
@@ -158,10 +161,47 @@ class DatabaseFirebase:
                     data.get('encrypted_symmetric_key'),
                     data.get('message_hash'),
                     data.get('digital_signature'),
+                    data.get('is_read', False),
+                    data.get('subject'),
                     data.get('created_at')
                 ))
             return results
         except Exception as e:
             print(f"Error getting messages: {e}")
             return []
+    
+    def mark_as_read(self, message_id: str) -> bool:
+        """Mark message as read"""
+        try:
+            self.db.collection('messages').document(message_id).update({
+                'is_read': True
+            })
+            return True
+        except Exception as e:
+            print(f"Error marking message as read: {e}")
+            return False
+    
+    def get_message_by_id(self, message_id: str) -> Optional[Tuple]:
+        """Get message by ID"""
+        try:
+            doc = self.db.collection('messages').document(message_id).get()
+            if not doc.exists:
+                return None
+            
+            data = doc.to_dict()
+            return (
+                doc.id,
+                data.get('sender'),
+                data.get('recipient'),
+                data.get('encrypted_content'),
+                data.get('encrypted_symmetric_key'),
+                data.get('message_hash'),
+                data.get('digital_signature'),
+                data.get('is_read', False),
+                data.get('subject'),
+                data.get('created_at')
+            )
+        except Exception as e:
+            print(f"Error getting message: {e}")
+            return None
 

@@ -3,26 +3,219 @@
 {% block title %}Dashboard - Secure Email System{% endblock %}
 
 {% block content %}
-<h2>Inbox - {{ username }}</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <h2>📧 Inbox - {{ username }}</h2>
+    <a href="{{ url_for('send_email') }}" class="btn" style="text-decoration: none;">✉️ Compose</a>
+</div>
 
 {% if messages %}
-<ul class="message-list">
-    {% for msg in messages %}
-    <li class="message-item">
-        <div class="message-header">
-            <span class="message-sender">From: {{ msg.sender }}</span>
-            <span class="message-date">{{ msg.created_at }}</span>
+<div class="inbox-container">
+    <div class="inbox-stats">
+        <span class="stat-item">
+            <strong>{{ messages|length }}</strong> Total
+        </span>
+        <span class="stat-item">
+            <strong>{{ messages|selectattr('is_read', 'equalto', False)|list|length }}</strong> Unread
+        </span>
+    </div>
+    
+    <div class="messages-container">
+        {% for msg in messages %}
+        <div class="message-card {% if not msg.is_read %}unread{% endif %}" onclick="window.location='{{ url_for('read_email', message_id=msg.id) }}'">
+            <div class="message-indicator">
+                {% if not msg.is_read %}
+                <span class="unread-dot"></span>
+                {% endif %}
+            </div>
+            <div class="message-content">
+                <div class="message-header-row">
+                    <span class="message-sender">
+                        {% if not msg.is_read %}<strong>{% endif %}
+                        {{ msg.sender }}
+                        {% if not msg.is_read %}</strong>{% endif %}
+                    </span>
+                    <span class="message-date">{{ msg.created_at }}</span>
+                </div>
+                <div class="message-subject">
+                    {% if not msg.is_read %}<strong>{% endif %}
+                    {{ msg.subject }}
+                    {% if not msg.is_read %}</strong>{% endif %}
+                </div>
+            </div>
+            <div class="message-actions" onclick="event.stopPropagation();">
+                <a href="{{ url_for('read_email', message_id=msg.id) }}" class="action-btn read-btn" title="Read">👁️</a>
+                <a href="{{ url_for('reply_email', message_id=msg.id) }}" class="action-btn reply-btn" title="Reply">↩️</a>
+                <a href="{{ url_for('forward_email', message_id=msg.id) }}" class="action-btn forward-btn" title="Forward">➡️</a>
+            </div>
         </div>
-        <a href="{{ url_for('read_email', message_id=msg.id) }}" class="btn">Read Email</a>
-    </li>
-    {% endfor %}
-</ul>
+        {% endfor %}
+    </div>
+</div>
 {% else %}
-<p>No messages in your inbox.</p>
+<div class="empty-inbox">
+    <div class="empty-icon">📭</div>
+    <h3>Your inbox is empty</h3>
+    <p>No messages yet. Start by sending an email!</p>
+    <a href="{{ url_for('send_email') }}" class="btn">Send Your First Email</a>
+</div>
 {% endif %}
 
-<div style="margin-top: 30px;">
-    <a href="{{ url_for('send_email') }}" class="btn">Send New Email</a>
-</div>
-{% endblock %}
+<style>
+.inbox-container {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+}
 
+.inbox-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.stat-item {
+    color: #666;
+    font-size: 14px;
+}
+
+.stat-item strong {
+    color: #667eea;
+    font-size: 18px;
+}
+
+.messages-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 4px solid transparent;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.message-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border-left-color: #667eea;
+}
+
+.message-card.unread {
+    background: #f0f4ff;
+    border-left-color: #667eea;
+}
+
+.message-indicator {
+    width: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.unread-dot {
+    width: 12px;
+    height: 12px;
+    background: #667eea;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.message-sender {
+    color: #333;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.message-date {
+    color: #999;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.message-subject {
+    color: #666;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.message-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.2s;
+    background: #f0f0f0;
+}
+
+.action-btn:hover {
+    transform: scale(1.1);
+    background: #667eea;
+}
+
+.read-btn:hover {
+    background: #28a745;
+}
+
+.reply-btn:hover {
+    background: #17a2b8;
+}
+
+.forward-btn:hover {
+    background: #ffc107;
+}
+
+.empty-inbox {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.empty-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+}
+
+.empty-inbox h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.empty-inbox p {
+    color: #666;
+    margin-bottom: 30px;
+}
+</style>
+{% endblock %}

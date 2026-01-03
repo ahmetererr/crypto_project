@@ -47,7 +47,7 @@ class EmailSystem:
         
         return True, "Authentication successful"
     
-    def send_email(self, sender: str, recipient: str, message: str) -> Tuple[bool, str]:
+    def send_email(self, sender: str, recipient: str, message: str, subject: str = None) -> Tuple[bool, str]:
         """Send encrypted and signed email"""
         # Check if sender exists
         if not self.db.user_exists(sender):
@@ -89,7 +89,7 @@ class EmailSystem:
         
         # Save message to database
         if self.db.save_message(sender, recipient, encrypted_content_with_iv,
-                               encrypted_symmetric_key, message_hash, digital_signature):
+                               encrypted_symmetric_key, message_hash, digital_signature, subject):
             return True, "Email sent successfully"
         else:
             return False, "Failed to save message"
@@ -109,8 +109,15 @@ class EmailSystem:
         if message_data is None:
             return False, None, "Message not found"
         
-        msg_id, sender, recipient, encrypted_content_with_iv, encrypted_symmetric_key, \
-            message_hash, digital_signature, created_at = message_data
+        # Handle both old format (8 fields) and new format (10 fields with is_read and subject)
+        if len(message_data) == 8:
+            msg_id, sender, recipient, encrypted_content_with_iv, encrypted_symmetric_key, \
+                message_hash, digital_signature, created_at = message_data
+            is_read = 0
+            subject = None
+        else:
+            msg_id, sender, recipient, encrypted_content_with_iv, encrypted_symmetric_key, \
+                message_hash, digital_signature, is_read, subject, created_at = message_data
         
         # Get recipient's private key
         recipient_private_key_str = self.db.get_private_key(username)
@@ -143,13 +150,18 @@ class EmailSystem:
             if not self.crypto.verify_signature(message_hash, digital_signature, sender_public_key):
                 return False, None, "Digital signature verification failed - message may not be from claimed sender"
             
+            # Mark as read
+            self.db.mark_as_read(msg_id)
+            
             # All verifications passed
             result = {
                 'id': msg_id,
                 'sender': sender,
                 'recipient': recipient,
                 'message': decrypted_message,
+                'subject': subject or '(No Subject)',
                 'created_at': created_at,
+                'is_read': True,
                 'integrity_verified': True,
                 'signature_verified': True
             }
@@ -164,11 +176,76 @@ class EmailSystem:
         messages = self.db.get_messages_for_user(username)
         result = []
         for msg in messages:
+            # Handle both old format (8 fields) and new format (10 fields)
+            if len(msg) == 8:
+                msg_id, sender, recipient, _, _, _, _, created_at = msg
+                is_read = 0
+                subject = None
+            else:
+                msg_id, sender, recipient, _, _, _, _, is_read, subject, created_at = msg
+            
             result.append({
-                'id': msg[0],
-                'sender': msg[1],
-                'recipient': msg[2],
-                'created_at': msg[7]
+                'id': msg_id,
+                'sender': sender,
+                'recipient': recipient,
+                'subject': subject or '(No Subject)',
+                'is_read': bool(is_read),
+                'created_at': created_at
             })
         return result
+    
+    def reply_email(self, original_message_id, replier: str, reply_message: str, subject: str = None) -> Tuple[bool, str]:
+        """Reply to an email"""
+        # Get original message
+        original_msg = self.db.get_message_by_id(original_message_id)
+        if not original_msg:
+            return False, "Original message not found"
+        
+        # Extract sender from original message
+        original_sender = original_msg[1]  # sender is at index 1
+        
+        # Create reply subject if not provided
+        if not subject:
+            original_subject = original_msg[8] if len(original_msg) > 8 else None
+            if original_subject and original_subject.startswith('Re: '):
+                subject = original_subject
+            else:
+                subject = f"Re: {original_subject or 'No Subject'}"
+        
+        # Send the reply
+        return self.send_email(replier, original_sender, reply_message, subject)
+    
+    def forward_email(self, original_message_id, forwarder: str, recipient: str, forward_message: str = None, subject: str = None) -> Tuple[bool, str]:
+        """Forward an email"""
+        # Get original message
+        original_msg = self.db.get_message_by_id(original_message_id)
+        if not original_msg:
+            return False, "Original message not found"
+        
+        # Decrypt original message
+        username = forwarder
+        success, email_data, _ = self.receive_email(username, original_message_id)
+        if not success:
+            return False, "Could not decrypt original message"
+        
+        # Create forwarded message content
+        original_sender = email_data['sender']
+        original_subject = email_data.get('subject', '(No Subject)')
+        original_content = email_data['message']
+        
+        # Create forward message
+        if forward_message:
+            forwarded_content = f"{forward_message}\n\n--- Forwarded Message ---\nFrom: {original_sender}\nSubject: {original_subject}\n\n{original_content}"
+        else:
+            forwarded_content = f"--- Forwarded Message ---\nFrom: {original_sender}\nSubject: {original_subject}\n\n{original_content}"
+        
+        # Create forward subject
+        if not subject:
+            if original_subject.startswith('Fwd: ') or original_subject.startswith('Fw: '):
+                subject = original_subject
+            else:
+                subject = f"Fwd: {original_subject}"
+        
+        # Send the forwarded email
+        return self.send_email(forwarder, recipient, forwarded_content, subject)
 

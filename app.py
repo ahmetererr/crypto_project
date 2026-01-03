@@ -81,14 +81,15 @@ def send_email():
     if request.method == 'POST':
         sender = session['username']
         recipient = request.form.get('recipient', '').strip()
+        subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
         
         if not recipient or not message:
             return render_template('send.html', error='Recipient and message are required')
         
-        success, msg = email_system.send_email(sender, recipient, message)
+        success, msg = email_system.send_email(sender, recipient, message, subject)
         if success:
-            return render_template('send.html', success=msg)
+            return redirect(url_for('dashboard'))
         else:
             return render_template('send.html', error=msg)
     
@@ -108,6 +109,79 @@ def read_email(message_id):
         return render_template('read.html', email=email_data, message=message)
     else:
         return render_template('read.html', error=message)
+
+
+@app.route('/reply/<int:message_id>', methods=['GET', 'POST'])
+def reply_email(message_id):
+    """Reply to an email"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    username = session['username']
+    
+    # Get original message for context
+    success, original_email, _ = email_system.receive_email(username, message_id)
+    if not success:
+        return render_template('send.html', error="Original message not found")
+    
+    if request.method == 'POST':
+        reply_message = request.form.get('message', '').strip()
+        subject = request.form.get('subject', '').strip()
+        
+        if not reply_message:
+            return render_template('reply.html', original_email=original_email, error='Message is required')
+        
+        success, msg = email_system.reply_email(message_id, username, reply_message, subject)
+        if success:
+            return redirect(url_for('dashboard'))
+        else:
+            return render_template('reply.html', original_email=original_email, error=msg)
+    
+    # Pre-fill subject
+    original_subject = original_email.get('subject', '(No Subject)')
+    if not original_subject.startswith('Re: '):
+        reply_subject = f"Re: {original_subject}"
+    else:
+        reply_subject = original_subject
+    
+    return render_template('reply.html', original_email=original_email, reply_subject=reply_subject)
+
+
+@app.route('/forward/<int:message_id>', methods=['GET', 'POST'])
+def forward_email(message_id):
+    """Forward an email"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    username = session['username']
+    
+    # Get original message for context
+    success, original_email, _ = email_system.receive_email(username, message_id)
+    if not success:
+        return render_template('send.html', error="Original message not found")
+    
+    if request.method == 'POST':
+        recipient = request.form.get('recipient', '').strip()
+        forward_message = request.form.get('message', '').strip()
+        subject = request.form.get('subject', '').strip()
+        
+        if not recipient:
+            return render_template('forward.html', original_email=original_email, error='Recipient is required')
+        
+        success, msg = email_system.forward_email(message_id, username, recipient, forward_message, subject)
+        if success:
+            return redirect(url_for('dashboard'))
+        else:
+            return render_template('forward.html', original_email=original_email, error=msg)
+    
+    # Pre-fill subject
+    original_subject = original_email.get('subject', '(No Subject)')
+    if not original_subject.startswith('Fwd: ') and not original_subject.startswith('Fw: '):
+        forward_subject = f"Fwd: {original_subject}"
+    else:
+        forward_subject = original_subject
+    
+    return render_template('forward.html', original_email=original_email, forward_subject=forward_subject)
 
 
 @app.route('/logout')

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Reply - Secure Email System{% endblock %}
+
+{% block content %}
+<h2>↩️ Reply</h2>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="original-email-preview">
+    <h3>Original Message:</h3>
+    <div class="preview-card">
+        <div><strong>From:</strong> {{ original_email.sender }}</div>
+        <div><strong>Subject:</strong> {{ original_email.subject }}</div>
+        <div><strong>Date:</strong> {{ original_email.created_at }}</div>
+        <div class="preview-message">{{ original_email.message[:200] }}{% if original_email.message|length > 200 %}...{% endif %}</div>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('reply_email', message_id=original_email.id) }}">
+    <div class="form-group">
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" value="{{ reply_subject }}" required>
+    </div>
+    <div class="form-group">
+        <label for="message">Your Reply:</label>
+        <textarea id="message" name="message" placeholder="Type your reply here..." required></textarea>
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-reply">↩️ Send Reply</button>
+        <a href="{{ url_for('read_email', message_id=original_email.id) }}" class="btn btn-secondary">← Back</a>
+    </div>
+</form>
+
+<style>
+.original-email-preview {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.original-email-preview h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.preview-card {
+    background: white;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 4px solid #667eea;
+}
+
+.preview-card div {
+    margin-bottom: 8px;
+    color: #666;
+}
+
+.preview-message {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+    font-style: italic;
+    color: #999;
+}
+
+.btn-reply {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+}
+</style>
+{% endblock %}
+

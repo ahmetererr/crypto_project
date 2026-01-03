@@ -84,11 +84,25 @@ class Database:
                 encrypted_symmetric_key TEXT NOT NULL,
                 message_hash TEXT NOT NULL,
                 digital_signature TEXT NOT NULL,
+                is_read INTEGER DEFAULT 0,
+                subject TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (sender) REFERENCES users(username),
                 FOREIGN KEY (recipient) REFERENCES users(username)
             )
         ''')
+        
+        # Add is_read column if it doesn't exist (for existing databases)
+        try:
+            cursor.execute('ALTER TABLE messages ADD COLUMN is_read INTEGER DEFAULT 0')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        # Add subject column if it doesn't exist
+        try:
+            cursor.execute('ALTER TABLE messages ADD COLUMN subject TEXT')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         conn.commit()
         conn.close()
@@ -207,21 +221,22 @@ class Database:
         return result[0] if result else None
     
     def save_message(self, sender: str, recipient: str, encrypted_content: str,
-                     encrypted_symmetric_key: str, message_hash: str, digital_signature: str) -> bool:
+                     encrypted_symmetric_key: str, message_hash: str, digital_signature: str, 
+                     subject: str = None) -> bool:
         """Save encrypted message"""
         if self.db_type == 'firebase':
             return self.firebase_db.save_message(sender, recipient, encrypted_content,
-                                                encrypted_symmetric_key, message_hash, digital_signature)
+                                                encrypted_symmetric_key, message_hash, digital_signature, subject)
         
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             cursor.execute(
                 '''INSERT INTO messages (sender, recipient, encrypted_content, 
-                    encrypted_symmetric_key, message_hash, digital_signature)
-                    VALUES (?, ?, ?, ?, ?, ?)''',
+                    encrypted_symmetric_key, message_hash, digital_signature, subject)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
                 (sender, recipient, encrypted_content, encrypted_symmetric_key,
-                 message_hash, digital_signature)
+                 message_hash, digital_signature, subject)
             )
             conn.commit()
             conn.close()
@@ -239,11 +254,51 @@ class Database:
         cursor = conn.cursor()
         cursor.execute(
             '''SELECT id, sender, recipient, encrypted_content, encrypted_symmetric_key,
-               message_hash, digital_signature, created_at
+               message_hash, digital_signature, is_read, subject, created_at
                FROM messages WHERE recipient = ? ORDER BY created_at DESC''',
             (username,)
         )
         results = cursor.fetchall()
         conn.close()
         return results
+    
+    def mark_as_read(self, message_id: int) -> bool:
+        """Mark message as read"""
+        if self.db_type == 'firebase':
+            return self.firebase_db.mark_as_read(message_id)
+        
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                'UPDATE messages SET is_read = 1 WHERE id = ?',
+                (message_id,)
+            )
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Error marking message as read: {e}")
+            return False
+    
+    def get_message_by_id(self, message_id: int) -> Optional[Tuple]:
+        """Get message by ID"""
+        if self.db_type == 'firebase':
+            return self.firebase_db.get_message_by_id(message_id)
+        
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                '''SELECT id, sender, recipient, encrypted_content, encrypted_symmetric_key,
+                   message_hash, digital_signature, is_read, subject, created_at
+                   FROM messages WHERE id = ?''',
+                (message_id,)
+            )
+            result = cursor.fetchone()
+            conn.close()
+            return result
+        except Exception as e:
+            print(f"Error getting message: {e}")
+            return None
 
