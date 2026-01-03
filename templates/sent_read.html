@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}{{ email.subject if email else 'Read Email' }} - Secure Email{% endblock %}
+{% block page_title %}{{ email.subject if email else 'Email' }}{% endblock %}
+
+{% block content %}
+{% if error %}
+<div style="padding: 16px;">
+    <div class="alert alert-error">{{ error }}</div>
+    <a href="{{ url_for('sent') }}" class="btn">Back to Sent</a>
+</div>
+{% elif email %}
+<div style="padding: 16px;">
+    <div class="email-header">
+        <div class="email-subject-line">
+            <h1 style="font-size: 22px; font-weight: 400; color: #202124; margin-bottom: 16px;">{{ email.subject }}</h1>
+        </div>
+        <div class="email-meta">
+            <div class="email-from">
+                <span style="font-weight: 500; color: #202124;">To: {{ email.recipient }}</span>
+                <span style="color: #5f6368; margin-left: 8px;">&lt;{{ email.recipient }}@secure.email&gt;</span>
+            </div>
+            <div class="email-to-date">
+                <span style="color: #5f6368; font-size: 14px;">from me</span>
+                <span style="color: #5f6368; font-size: 14px; margin-left: 16px;">{{ email.created_at }}</span>
+            </div>
+        </div>
+        <div class="verification-badges">
+            {% if email.integrity_verified %}
+            <span class="badge verified">✓ Integrity Verified</span>
+            {% else %}
+            <span class="badge not-verified">✗ Integrity Failed</span>
+            {% endif %}
+            {% if email.signature_verified %}
+            <span class="badge verified">✓ Signature Verified</span>
+            {% else %}
+            <span class="badge not-verified">✗ Signature Failed</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="email-body">
+        <div class="email-content" style="{% if email.is_sent %}background: #fff3cd; padding: 16px; border-radius: 4px; border-left: 4px solid #ffc107;{% endif %}">
+            {{ email.message|safe }}
+            {% if email.is_sent %}
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #5f6368;">
+                <strong>Note:</strong> This message was encrypted for the recipient. You cannot view the decrypted content of messages you sent.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="email-actions-bar">
+        <a href="{{ url_for('forward_email', message_id=email.id) }}" class="action-btn">Forward</a>
+        <a href="{{ url_for('sent') }}" class="action-btn">Back to Sent</a>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.email-header {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+.email-meta {
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.email-from {
+    margin-bottom: 4px;
+}
+
+.email-to-date {
+    margin-top: 4px;
+}
+
+.verification-badges {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge.verified {
+    background: #e6f4ea;
+    color: #137333;
+}
+
+.badge.not-verified {
+    background: #fce8e6;
+    color: #c5221f;
+}
+
+.email-body {
+    padding: 16px 0;
+    min-height: 200px;
+}
+
+.email-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
+    color: #202124;
+    font-size: 14px;
+}
+
+.email-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 8px 0;
+}
+
+.email-actions-bar {
+    display: flex;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    color: #1a73e8;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.action-btn:hover {
+    background: #f8f9fa;
+}
+</style>
+{% endblock %}
+

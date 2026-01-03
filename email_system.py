@@ -96,18 +96,22 @@ class EmailSystem:
     
     def receive_email(self, username: str, message_id: int) -> Tuple[bool, Optional[Dict], str]:
         """Receive and decrypt email, verify integrity and signature"""
-        # Get all messages for user
-        messages = self.db.get_messages_for_user(username)
-        
-        # Find the specific message
-        message_data = None
-        for msg in messages:
-            if msg[0] == message_id:  # msg[0] is the id
-                message_data = msg
-                break
+        # Try to get message by ID directly (works for both inbox and sent)
+        message_data = self.db.get_message_by_id(message_id)
         
         if message_data is None:
             return False, None, "Message not found"
+        
+        # Check if user is either recipient or sender
+        if len(message_data) == 8:
+            msg_id, sender, recipient, _, _, _, _, created_at = message_data
+            is_read = 0
+            subject = None
+        else:
+            msg_id, sender, recipient, _, _, _, _, is_read, subject, created_at = message_data
+        
+        if username != recipient and username != sender:
+            return False, None, "You don't have permission to view this message"
         
         # Handle both old format (8 fields) and new format (10 fields with is_read and subject)
         if len(message_data) == 8:
@@ -150,7 +154,7 @@ class EmailSystem:
             if not self.crypto.verify_signature(message_hash, digital_signature, sender_public_key):
                 return False, None, "Digital signature verification failed - message may not be from claimed sender"
             
-            # Mark as read
+            # Mark as read (only for received messages)
             self.db.mark_as_read(msg_id)
             
             # All verifications passed
@@ -163,7 +167,8 @@ class EmailSystem:
                 'created_at': created_at,
                 'is_read': True,
                 'integrity_verified': True,
-                'signature_verified': True
+                'signature_verified': True,
+                'is_sent': False
             }
             
             return True, result, "Email received and verified successfully"

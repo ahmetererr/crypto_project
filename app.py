@@ -169,7 +169,10 @@ def read_email(message_id):
     success, email_data, message = email_system.receive_email(username, message_id)
     
     if success and email_data:
-        return render_template('read.html', email=email_data, message=message)
+        # Check if this is a sent message (user is sender)
+        is_sent = email_data.get('sender') == username
+        template = 'sent_read.html' if is_sent else 'read.html'
+        return render_template(template, email=email_data, message=message)
     else:
         return render_template('read.html', error=message)
 

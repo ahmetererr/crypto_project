@@ -13,7 +13,7 @@
 
 <div class="email-list">
     {% for msg in messages %}
-    <div class="email-item" onclick="window.location='{{ url_for('read_email', message_id=msg.id) }}'">
+    <div class="email-item" onclick="window.location='{{ url_for('read_email', message_id=msg.id) }}'" style="cursor: pointer;">
         <div class="email-checkbox">
             <input type="checkbox" onclick="event.stopPropagation();">
         </div>
