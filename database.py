@@ -86,11 +86,29 @@ class Database:
                 digital_signature TEXT NOT NULL,
                 is_read INTEGER DEFAULT 0,
                 subject TEXT,
+                cc TEXT,
+                bcc TEXT,
+                reply_to INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (sender) REFERENCES users(username),
-                FOREIGN KEY (recipient) REFERENCES users(username)
+                FOREIGN KEY (recipient) REFERENCES users(username),
+                FOREIGN KEY (reply_to) REFERENCES messages(id)
             )
         ''')
+        
+        # Add new columns if they don't exist
+        try:
+            cursor.execute('ALTER TABLE messages ADD COLUMN cc TEXT')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        try:
+            cursor.execute('ALTER TABLE messages ADD COLUMN bcc TEXT')
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cursor.execute('ALTER TABLE messages ADD COLUMN reply_to INTEGER')
+        except sqlite3.OperationalError:
+            pass
         
         # Add is_read column if it doesn't exist (for existing databases)
         try:
@@ -222,22 +240,36 @@ class Database:
     
     def save_message(self, sender: str, recipient: str, encrypted_content: str,
                      encrypted_symmetric_key: str, message_hash: str, digital_signature: str, 
-                     subject: str = None) -> bool:
+                     subject: str = None, cc: str = None, bcc: str = None, reply_to: int = None,
+                     sender_copy_encrypted_content: str = None, sender_copy_encrypted_key: str = None) -> bool:
         """Save encrypted message"""
         if self.db_type == 'firebase':
             return self.firebase_db.save_message(sender, recipient, encrypted_content,
-                                                encrypted_symmetric_key, message_hash, digital_signature, subject)
+                                                encrypted_symmetric_key, message_hash, digital_signature, 
+                                                subject, cc, bcc, reply_to, sender_copy_encrypted_content, sender_copy_encrypted_key)
         
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             cursor.execute(
                 '''INSERT INTO messages (sender, recipient, encrypted_content, 
-                    encrypted_symmetric_key, message_hash, digital_signature, subject)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                    encrypted_symmetric_key, message_hash, digital_signature, subject, cc, bcc, reply_to)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 (sender, recipient, encrypted_content, encrypted_symmetric_key,
-                 message_hash, digital_signature, subject)
+                 message_hash, digital_signature, subject, cc, bcc, reply_to)
             )
+            message_id = cursor.lastrowid
+            
+            # Save sender's copy if provided (encrypted with sender's own key)
+            if sender_copy_encrypted_content and sender_copy_encrypted_key:
+                cursor.execute(
+                    '''INSERT INTO messages (sender, recipient, encrypted_content, 
+                        encrypted_symmetric_key, message_hash, digital_signature, subject, cc, bcc, reply_to)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    (sender, sender, sender_copy_encrypted_content, sender_copy_encrypted_key,
+                     message_hash, digital_signature, subject, cc, bcc, reply_to)
+                )
+            
             conn.commit()
             conn.close()
             return True
@@ -254,7 +286,7 @@ class Database:
         cursor = conn.cursor()
         cursor.execute(
             '''SELECT id, sender, recipient, encrypted_content, encrypted_symmetric_key,
-               message_hash, digital_signature, is_read, subject, created_at
+               message_hash, digital_signature, is_read, subject, cc, bcc, reply_to, created_at
                FROM messages WHERE recipient = ? ORDER BY created_at DESC''',
             (username,)
         )
@@ -271,8 +303,8 @@ class Database:
         cursor = conn.cursor()
         cursor.execute(
             '''SELECT id, sender, recipient, encrypted_content, encrypted_symmetric_key,
-               message_hash, digital_signature, is_read, subject, created_at
-               FROM messages WHERE sender = ? ORDER BY created_at DESC''',
+               message_hash, digital_signature, is_read, subject, cc, bcc, reply_to, created_at
+               FROM messages WHERE sender = ? AND recipient != sender ORDER BY created_at DESC''',
             (username,)
         )
         results = cursor.fetchall()
@@ -320,7 +352,7 @@ class Database:
             cursor = conn.cursor()
             cursor.execute(
                 '''SELECT id, sender, recipient, encrypted_content, encrypted_symmetric_key,
-                   message_hash, digital_signature, is_read, subject, created_at
+                   message_hash, digital_signature, is_read, subject, cc, bcc, reply_to, created_at
                    FROM messages WHERE id = ?''',
                 (int(message_id),)
             )

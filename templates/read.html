@@ -22,8 +22,16 @@
             </div>
             <div class="email-to-date">
                 <span style="color: #5f6368; font-size: 14px;">to me</span>
+                {% if email.cc %}
+                <span style="color: #5f6368; font-size: 14px; margin-left: 16px;">cc: {{ email.cc }}</span>
+                {% endif %}
                 <span style="color: #5f6368; font-size: 14px; margin-left: 16px;">{{ email.created_at }}</span>
             </div>
+            {% if email.reply_to %}
+            <div style="margin-top: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 12px; color: #5f6368;">
+                <a href="{{ url_for('read_email', message_id=email.reply_to) }}" style="color: #1a73e8; text-decoration: none;">↩️ In reply to</a>
+            </div>
+            {% endif %}
         </div>
         <div class="verification-badges">
             {% if email.integrity_verified %}

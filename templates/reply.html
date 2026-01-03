@@ -9,10 +9,14 @@
     <div class="alert alert-error">{{ error }}</div>
     {% endif %}
     
-    <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 16px; font-size: 14px; color: #5f6368;">
-        <div><strong>From:</strong> {{ original_email.sender }}</div>
-        <div><strong>Subject:</strong> {{ original_email.subject }}</div>
-        <div><strong>Date:</strong> {{ original_email.created_at }}</div>
+    <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 16px; font-size: 14px; color: #5f6368; border-left: 3px solid #1a73e8;">
+        <div style="margin-bottom: 8px;"><strong>From:</strong> {{ original_email.sender }}</div>
+        <div style="margin-bottom: 8px;"><strong>Subject:</strong> {{ original_email.subject }}</div>
+        <div style="margin-bottom: 8px;"><strong>Date:</strong> {{ original_email.created_at }}</div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0; max-height: 200px; overflow-y: auto;">
+            <div style="font-weight: 500; margin-bottom: 8px;">Original Message:</div>
+            <div style="white-space: pre-wrap; color: #202124; background: white; padding: 8px; border-radius: 4px;">{{ original_email.message }}</div>
+        </div>
     </div>
     
     <form method="POST" action="{{ url_for('reply_email', message_id=original_email.id) }}" enctype="multipart/form-data" id="replyForm">

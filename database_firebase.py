@@ -121,7 +121,8 @@ class DatabaseFirebase:
     
     def save_message(self, sender: str, recipient: str, encrypted_content: str,
                      encrypted_symmetric_key: str, message_hash: str, digital_signature: str, 
-                     subject: str = None) -> bool:
+                     subject: str = None, cc: str = None, bcc: str = None, reply_to: int = None,
+                     sender_copy_encrypted_content: str = None, sender_copy_encrypted_key: str = None) -> bool:
         """Save encrypted message"""
         try:
             messages_ref = self.db.collection('messages')
@@ -134,8 +135,29 @@ class DatabaseFirebase:
                 'digital_signature': digital_signature,
                 'is_read': False,
                 'subject': subject,
+                'cc': cc,
+                'bcc': bcc,
+                'reply_to': reply_to,
                 'created_at': firestore.SERVER_TIMESTAMP
             })
+            
+            # Save sender's copy if provided
+            if sender_copy_encrypted_content and sender_copy_encrypted_key:
+                messages_ref.add({
+                    'sender': sender,
+                    'recipient': sender,
+                    'encrypted_content': sender_copy_encrypted_content,
+                    'encrypted_symmetric_key': sender_copy_encrypted_key,
+                    'message_hash': message_hash,
+                    'digital_signature': digital_signature,
+                    'is_read': False,
+                    'subject': subject,
+                    'cc': cc,
+                    'bcc': bcc,
+                    'reply_to': reply_to,
+                    'created_at': firestore.SERVER_TIMESTAMP
+                })
+            
             return True
         except Exception as e:
             print(f"Error saving message: {e}")
@@ -152,7 +174,7 @@ class DatabaseFirebase:
             for doc in docs:
                 data = doc.to_dict()
                 # Convert to tuple format compatible with SQLite version
-                # (id, sender, recipient, encrypted_content, encrypted_symmetric_key, message_hash, digital_signature, is_read, subject, created_at)
+                # (id, sender, recipient, encrypted_content, encrypted_symmetric_key, message_hash, digital_signature, is_read, subject, cc, bcc, reply_to, created_at)
                 results.append((
                     doc.id,  # Firestore document ID
                     data.get('sender'),
@@ -163,6 +185,9 @@ class DatabaseFirebase:
                     data.get('digital_signature'),
                     data.get('is_read', False),
                     data.get('subject'),
+                    data.get('cc'),
+                    data.get('bcc'),
+                    data.get('reply_to'),
                     data.get('created_at')
                 ))
             return results
@@ -190,6 +215,9 @@ class DatabaseFirebase:
                     data.get('digital_signature'),
                     data.get('is_read', False),
                     data.get('subject'),
+                    data.get('cc'),
+                    data.get('bcc'),
+                    data.get('reply_to'),
                     data.get('created_at')
                 ))
             return results
@@ -236,6 +264,9 @@ class DatabaseFirebase:
                 data.get('digital_signature'),
                 data.get('is_read', False),
                 data.get('subject'),
+                data.get('cc'),
+                data.get('bcc'),
+                data.get('reply_to'),
                 data.get('created_at')
             )
         except Exception as e:

@@ -104,6 +104,8 @@ def send_email():
     if request.method == 'POST':
         sender = session['username']
         recipients_str = request.form.get('recipient', '').strip()
+        cc_str = request.form.get('cc', '').strip()
+        bcc_str = request.form.get('bcc', '').strip()
         subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
         
@@ -134,15 +136,24 @@ def send_email():
         
         # Parse multiple recipients (comma or semicolon separated)
         recipients = [r.strip() for r in recipients_str.replace(';', ',').split(',') if r.strip()]
+        cc_list = [r.strip() for r in cc_str.replace(';', ',').split(',') if r.strip()] if cc_str else []
+        bcc_list = [r.strip() for r in bcc_str.replace(';', ',').split(',') if r.strip()] if bcc_str else []
         
         if not recipients:
             return render_template('send.html', error='At least one recipient is required', usernames=email_system.get_all_usernames())
         
+        # Combine all recipients (To + CC + BCC)
+        all_recipients = list(set(recipients + cc_list + bcc_list))
+        
         # Send to all recipients
         success_count = 0
         errors = []
-        for recipient in recipients:
-            success, msg = email_system.send_email(sender, recipient, message, subject)
+        for recipient in all_recipients:
+            # Determine if this recipient is in CC or BCC
+            cc_value = ','.join(cc_list) if recipient in cc_list else None
+            bcc_value = ','.join(bcc_list) if recipient in bcc_list else None
+            
+            success, msg = email_system.send_email(sender, recipient, message, subject, cc=cc_value, bcc=bcc_value)
             if success:
                 success_count += 1
             else:
