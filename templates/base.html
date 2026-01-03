@@ -235,6 +235,10 @@
                     <span class="nav-item-icon">📥</span>
                     <span>Inbox</span>
                 </a>
+                <a href="{{ url_for('sent') }}" class="nav-item {% if request.endpoint == 'sent' %}active{% endif %}">
+                    <span class="nav-item-icon">📤</span>
+                    <span>Sent</span>
+                </a>
             </nav>
             <div class="user-info">
                 <div class="user-name">{{ session.username }}</div>
@@ -253,7 +257,7 @@
     </div>
     {% else %}
     <div style="max-width: 400px; margin: 100px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        {% block content %}{% endblock %}
+        {% block auth_content %}{% endblock %}
     </div>
     {% endif %}
 </body>

@@ -73,6 +73,28 @@ def dashboard():
     return render_template('dashboard.html', username=username, messages=messages)
 
 
+@app.route('/sent')
+def sent():
+    """Sent messages page"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    username = session['username']
+    messages = email_system.list_sent_messages(username)
+    
+    return render_template('sent.html', username=username, messages=messages)
+
+
+@app.route('/api/users')
+def api_users():
+    """API endpoint for getting all usernames (for autocomplete)"""
+    if 'username' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    usernames = email_system.get_all_usernames()
+    return jsonify({'users': usernames}), 200
+
+
 @app.route('/send', methods=['GET', 'POST'])
 def send_email():
     """Send email page"""
@@ -81,7 +103,7 @@ def send_email():
     
     if request.method == 'POST':
         sender = session['username']
-        recipient = request.form.get('recipient', '').strip()
+        recipients_str = request.form.get('recipient', '').strip()
         subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
         
@@ -95,29 +117,46 @@ def send_email():
                 image_file.seek(0)
                 
                 if file_size > 5 * 1024 * 1024:  # 5MB
-                    return render_template('send.html', error='Image size must be less than 5MB')
+                    return render_template('send.html', error='Image size must be less than 5MB', usernames=email_system.get_all_usernames())
                 
                 # Check if it's an image
                 if not image_file.content_type.startswith('image/'):
-                    return render_template('send.html', error='Please upload an image file')
+                    return render_template('send.html', error='Please upload an image file', usernames=email_system.get_all_usernames())
                 
                 # Convert image to base64 and embed in message
-                import base64
                 image_data = image_file.read()
                 image_base64 = base64.b64encode(image_data).decode('utf-8')
                 image_tag = f'\n\n<img src="data:{image_file.content_type};base64,{image_base64}" alt="{image_file.filename}" style="max-width: 100%; height: auto;">'
                 message += image_tag
         
-        if not recipient or not message:
-            return render_template('send.html', error='Recipient and message are required')
+        if not recipients_str or not message:
+            return render_template('send.html', error='Recipient and message are required', usernames=email_system.get_all_usernames())
         
-        success, msg = email_system.send_email(sender, recipient, message, subject)
-        if success:
-            return redirect(url_for('dashboard'))
+        # Parse multiple recipients (comma or semicolon separated)
+        recipients = [r.strip() for r in recipients_str.replace(';', ',').split(',') if r.strip()]
+        
+        if not recipients:
+            return render_template('send.html', error='At least one recipient is required', usernames=email_system.get_all_usernames())
+        
+        # Send to all recipients
+        success_count = 0
+        errors = []
+        for recipient in recipients:
+            success, msg = email_system.send_email(sender, recipient, message, subject)
+            if success:
+                success_count += 1
+            else:
+                errors.append(f"{recipient}: {msg}")
+        
+        if success_count > 0:
+            if len(errors) > 0:
+                return render_template('send.html', error=f'Sent to {success_count} recipient(s), but failed for: {", ".join(errors)}', usernames=email_system.get_all_usernames())
+            return redirect(url_for('sent'))
         else:
-            return render_template('send.html', error=msg)
+            return render_template('send.html', error='Failed to send to all recipients: ' + '; '.join(errors), usernames=email_system.get_all_usernames())
     
-    return render_template('send.html')
+    usernames = email_system.get_all_usernames()
+    return render_template('send.html', usernames=usernames)
 
 
 @app.route('/read/<int:message_id>')

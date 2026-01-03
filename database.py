@@ -246,7 +246,7 @@ class Database:
             return False
     
     def get_messages_for_user(self, username: str) -> List[Tuple]:
-        """Get all messages for a user"""
+        """Get all messages for a user (inbox)"""
         if self.db_type == 'firebase':
             return self.firebase_db.get_messages_for_user(username)
         
@@ -261,6 +261,35 @@ class Database:
         results = cursor.fetchall()
         conn.close()
         return results
+    
+    def get_sent_messages_for_user(self, username: str) -> List[Tuple]:
+        """Get all messages sent by a user"""
+        if self.db_type == 'firebase':
+            return self.firebase_db.get_sent_messages_for_user(username)
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''SELECT id, sender, recipient, encrypted_content, encrypted_symmetric_key,
+               message_hash, digital_signature, is_read, subject, created_at
+               FROM messages WHERE sender = ? ORDER BY created_at DESC''',
+            (username,)
+        )
+        results = cursor.fetchall()
+        conn.close()
+        return results
+    
+    def get_all_usernames(self) -> List[str]:
+        """Get all usernames for autocomplete"""
+        if self.db_type == 'firebase':
+            return self.firebase_db.get_all_usernames()
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT username FROM users ORDER BY username')
+        results = cursor.fetchall()
+        conn.close()
+        return [row[0] for row in results]
     
     def mark_as_read(self, message_id) -> bool:
         """Mark message as read (int for SQLite, str for Firebase)"""

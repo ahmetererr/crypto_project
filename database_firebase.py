@@ -142,7 +142,7 @@ class DatabaseFirebase:
             return False
     
     def get_messages_for_user(self, username: str) -> List[Tuple]:
-        """Get all messages for a user"""
+        """Get all messages for a user (inbox)"""
         try:
             messages_ref = self.db.collection('messages')
             query = messages_ref.where('recipient', '==', username).order_by('created_at', direction=firestore.Query.DESCENDING)
@@ -168,6 +168,43 @@ class DatabaseFirebase:
             return results
         except Exception as e:
             print(f"Error getting messages: {e}")
+            return []
+    
+    def get_sent_messages_for_user(self, username: str) -> List[Tuple]:
+        """Get all messages sent by a user"""
+        try:
+            messages_ref = self.db.collection('messages')
+            query = messages_ref.where('sender', '==', username).order_by('created_at', direction=firestore.Query.DESCENDING)
+            docs = query.stream()
+            
+            results = []
+            for doc in docs:
+                data = doc.to_dict()
+                results.append((
+                    doc.id,
+                    data.get('sender'),
+                    data.get('recipient'),
+                    data.get('encrypted_content'),
+                    data.get('encrypted_symmetric_key'),
+                    data.get('message_hash'),
+                    data.get('digital_signature'),
+                    data.get('is_read', False),
+                    data.get('subject'),
+                    data.get('created_at')
+                ))
+            return results
+        except Exception as e:
+            print(f"Error getting sent messages: {e}")
+            return []
+    
+    def get_all_usernames(self) -> List[str]:
+        """Get all usernames for autocomplete"""
+        try:
+            users_ref = self.db.collection('users')
+            docs = users_ref.stream()
+            return [doc.id for doc in docs]
+        except Exception as e:
+            print(f"Error getting usernames: {e}")
             return []
     
     def mark_as_read(self, message_id: str) -> bool:

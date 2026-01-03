@@ -172,7 +172,7 @@ class EmailSystem:
             return False, None, f"Error decrypting message: {str(e)}"
     
     def list_messages(self, username: str) -> List[Dict]:
-        """List all messages for a user (without decrypting)"""
+        """List all messages for a user (inbox, without decrypting)"""
         messages = self.db.get_messages_for_user(username)
         result = []
         for msg in messages:
@@ -193,6 +193,33 @@ class EmailSystem:
                 'created_at': created_at
             })
         return result
+    
+    def list_sent_messages(self, username: str) -> List[Dict]:
+        """List all messages sent by a user (without decrypting)"""
+        messages = self.db.get_sent_messages_for_user(username)
+        result = []
+        for msg in messages:
+            # Handle both old format (8 fields) and new format (10 fields)
+            if len(msg) == 8:
+                msg_id, sender, recipient, _, _, _, _, created_at = msg
+                is_read = 0
+                subject = None
+            else:
+                msg_id, sender, recipient, _, _, _, _, is_read, subject, created_at = msg
+            
+            result.append({
+                'id': msg_id,
+                'sender': sender,
+                'recipient': recipient,
+                'subject': subject or '(No Subject)',
+                'is_read': bool(is_read),
+                'created_at': created_at
+            })
+        return result
+    
+    def get_all_usernames(self) -> List[str]:
+        """Get all usernames for autocomplete"""
+        return self.db.get_all_usernames()
     
     def reply_email(self, original_message_id, replier: str, reply_message: str, subject: str = None) -> Tuple[bool, str]:
         """Reply to an email"""
