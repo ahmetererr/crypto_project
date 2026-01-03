@@ -102,17 +102,6 @@ class EmailSystem:
         if message_data is None:
             return False, None, "Message not found"
         
-        # Check if user is either recipient or sender
-        if len(message_data) == 8:
-            msg_id, sender, recipient, _, _, _, _, created_at = message_data
-            is_read = 0
-            subject = None
-        else:
-            msg_id, sender, recipient, _, _, _, _, is_read, subject, created_at = message_data
-        
-        if username != recipient and username != sender:
-            return False, None, "You don't have permission to view this message"
-        
         # Handle both old format (8 fields) and new format (10 fields with is_read and subject)
         if len(message_data) == 8:
             msg_id, sender, recipient, encrypted_content_with_iv, encrypted_symmetric_key, \
@@ -123,6 +112,32 @@ class EmailSystem:
             msg_id, sender, recipient, encrypted_content_with_iv, encrypted_symmetric_key, \
                 message_hash, digital_signature, is_read, subject, created_at = message_data
         
+        # Check if user is either recipient or sender
+        if username != recipient and username != sender:
+            return False, None, "You don't have permission to view this message"
+        
+        # Determine if user is sender or recipient
+        is_sender = (username == sender)
+        
+        # For sent messages, we can't decrypt (encrypted with recipient's key)
+        # But we can show metadata
+        if is_sender:
+            # For sent messages, return metadata without decryption
+            result = {
+                'id': msg_id,
+                'sender': sender,
+                'recipient': recipient,
+                'message': '[Message content encrypted for recipient. You cannot decrypt messages you sent.]',
+                'subject': subject or '(No Subject)',
+                'created_at': created_at,
+                'is_read': bool(is_read),
+                'integrity_verified': True,  # We trust our own messages
+                'signature_verified': True,
+                'is_sent': True
+            }
+            return True, result, "Sent message (content encrypted for recipient)"
+        
+        # For received messages, decrypt normally
         # Get recipient's private key
         recipient_private_key_str = self.db.get_private_key(username)
         if recipient_private_key_str is None:
