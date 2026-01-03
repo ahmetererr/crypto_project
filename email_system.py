@@ -155,6 +155,13 @@ class EmailSystem:
             
             sender_private_key = self.crypto.deserialize_private_key(sender_private_key_str)
             
+            # Get sender's public key for signature verification
+            sender_public_key_str = self.db.get_public_key(sender)
+            if sender_public_key_str is None:
+                return False, None, "Sender's public key not found"
+            
+            sender_public_key = self.crypto.deserialize_public_key(sender_public_key_str)
+            
             try:
                 # Decrypt using sender's own key
                 symmetric_key = self.crypto.decrypt_with_private_key(encrypted_symmetric_key, sender_private_key)
@@ -165,6 +172,11 @@ class EmailSystem:
                 computed_hash = self.crypto.hash_message(decrypted_message)
                 if computed_hash != message_hash:
                     return False, None, "Message integrity verification failed"
+                
+                # Verify digital signature
+                signature_verified = self.crypto.verify_signature(message_hash, digital_signature, sender_public_key)
+                if not signature_verified:
+                    return False, None, "Digital signature verification failed - message may have been tampered with"
                 
                 result = {
                     'id': msg_id,
@@ -178,7 +190,7 @@ class EmailSystem:
                     'created_at': created_at,
                     'is_read': bool(is_read),
                     'integrity_verified': True,
-                    'signature_verified': True,
+                    'signature_verified': True,  # Verified above, so always True here
                     'is_sent': True
                 }
                 return True, result, "Sent message (decrypted from your copy)"
