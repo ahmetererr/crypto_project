@@ -29,3 +29,8 @@ Thumbs.db
 # Project specific
 secure_email.db
 
+# Firebase credentials (never commit!)
+*firebase*credentials*.json
+*service-account*.json
+firebase-key.json
+

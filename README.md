@@ -183,12 +183,99 @@ A secure email system that ensures user authentication, message confidentiality,
 - **Permission errors**: Run command prompt as administrator (Windows) or use `sudo` (Linux/macOS)
 - **Port conflicts**: Close other applications using the same resources
 
+## Running as Web Server (Online Access)
+
+The system can run as a web server, allowing remote access via web browser or REST API.
+
+### Start Web Server
+
+**Windows:**
+```cmd
+run_server.bat
+```
+
+**Linux/macOS:**
+```bash
+chmod +x run_server.sh
+./run_server.sh
+```
+
+**Or manually:**
+```bash
+# Activate virtual environment
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Run server
+python app.py
+```
+
+### Access the System
+
+Once the server is running:
+- **Web Interface**: Open browser and go to `http://localhost:5000`
+- **Network Access**: To allow access from other devices on your network, the server runs on `0.0.0.0:5000`
+  - Access from other devices: `http://YOUR_IP_ADDRESS:5000`
+  - Find your IP: `ipconfig` (Windows) or `ifconfig` (Linux/macOS)
+
+### REST API Endpoints
+
+- `POST /api/register` - Register new user
+- `POST /api/login` - Login user
+- `POST /api/send` - Send email
+- `GET /api/inbox/<username>` - Get inbox
+- `GET /api/read/<username>/<message_id>` - Read email
+
+Example API usage:
+```bash
+# Register
+curl -X POST http://localhost:5000/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","password":"password123"}'
+
+# Send email
+curl -X POST http://localhost:5000/api/send \
+  -H "Content-Type: application/json" \
+  -d '{"sender":"alice","recipient":"bob","message":"Hello!"}'
+```
+
+## Database Options
+
+### SQLite (Default - Local)
+- No configuration needed
+- Database file: `secure_email.db`
+- Works offline
+
+### Firebase Firestore (Cloud)
+To use Firebase instead of SQLite:
+
+1. **Create Firebase Project:**
+   - Go to https://console.firebase.google.com/
+   - Create a new project
+   - Enable Firestore Database
+
+2. **Get Service Account Key:**
+   - Project Settings → Service Accounts
+   - Generate new private key
+   - Download JSON file
+
+3. **Configure:**
+   ```bash
+   # Set environment variables
+   export DB_TYPE=firebase
+   export FIREBASE_CREDENTIALS_PATH=/path/to/service-account-key.json
+   export FIREBASE_PROJECT_ID=your-project-id
+   ```
+
+   Or edit `config.py` directly.
+
 ## Dependencies
 
 The project uses the following packages (see `requirements.txt`):
 
 - **bcrypt** (>=4.0.0): Secure password hashing
 - **cryptography** (>=41.0.0): Cryptographic primitives (RSA, AES, hashing, signatures)
+- **flask** (>=2.0.0): Web framework for server mode
+- **google-cloud-firestore** (>=2.0.0): Firebase Firestore support (optional)
 
 These versions are compatible with Python 3.8+ on Windows, Linux, and macOS.
 
@@ -243,15 +330,27 @@ The system includes error handling for:
 
 ```
 crypto_project/
-├── database.py          # Database management
+├── database.py          # Database management (SQLite/Firebase)
+├── database_firebase.py # Firebase Firestore implementation
 ├── crypto_utils.py      # Cryptographic operations
 ├── email_system.py      # Email system logic
-├── main.py              # Main application interface
+├── main.py              # CLI application interface
+├── app.py               # Flask web server
+├── config.py            # Configuration (database type, etc.)
 ├── test_system.py       # Automated test script
 ├── requirements.txt     # Python dependencies
 ├── README.md            # This file
-├── run.bat              # Windows run script
-├── run.sh               # Linux/macOS run script
+├── run.bat              # Windows CLI run script
+├── run.sh               # Linux/macOS CLI run script
+├── run_server.bat       # Windows web server script
+├── run_server.sh        # Linux/macOS web server script
+├── templates/           # HTML templates for web interface
+│   ├── base.html
+│   ├── login.html
+│   ├── register.html
+│   ├── dashboard.html
+│   ├── send.html
+│   └── read.html
 └── secure_email.db      # SQLite database (created automatically)
 ```
 

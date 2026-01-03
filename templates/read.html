@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Read Email - Secure Email System{% endblock %}
+
+{% block content %}
+<h2>Read Email</h2>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+<a href="{{ url_for('dashboard') }}" class="btn">Back to Inbox</a>
+{% elif email %}
+<div class="email-content">
+    <div class="email-header">
+        <div class="email-field">
+            <strong>From:</strong> {{ email.sender }}
+        </div>
+        <div class="email-field">
+            <strong>To:</strong> {{ email.recipient }}
+        </div>
+        <div class="email-field">
+            <strong>Date:</strong> {{ email.created_at }}
+        </div>
+        <div class="email-field">
+            <strong>Integrity Verified:</strong> 
+            {% if email.integrity_verified %}
+            <span class="verification-badge verified">✓ Verified</span>
+            {% else %}
+            <span class="verification-badge not-verified">✗ Failed</span>
+            {% endif %}
+        </div>
+        <div class="email-field">
+            <strong>Signature Verified:</strong> 
+            {% if email.signature_verified %}
+            <span class="verification-badge verified">✓ Verified</span>
+            {% else %}
+            <span class="verification-badge not-verified">✗ Failed</span>
+            {% endif %}
+        </div>
+    </div>
+    <div style="margin-top: 20px;">
+        <strong>Message:</strong>
+        <div style="background: white; padding: 15px; border-radius: 5px; margin-top: 10px; white-space: pre-wrap;">{{ email.message }}</div>
+    </div>
+</div>
+
+<div style="margin-top: 20px;">
+    <a href="{{ url_for('dashboard') }}" class="btn">Back to Inbox</a>
+</div>
+{% endif %}
+{% endblock %}
+
