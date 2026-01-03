@@ -3,49 +3,379 @@
 {% block title %}Create Mail - Secure Email{% endblock %}
 {% block page_title %}Create Mail{% endblock %}
 
+{% block extra_css %}
+<style>
+.compose-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    background: #fff;
+}
+
+.compose-header {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0;
+    background: #fff;
+}
+
+.compose-header-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    min-height: 48px;
+}
+
+.compose-header-row:last-child {
+    border-bottom: none;
+}
+
+.compose-label {
+    font-size: 13px;
+    color: #5f6368;
+    min-width: 60px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.compose-label:hover {
+    color: #1a73e8;
+}
+
+.recipient-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    min-height: 32px;
+    padding: 4px 0;
+}
+
+.recipient-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.recipient-tag {
+    background: #e8f0fe;
+    color: #1a73e8;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.recipient-tag .remove {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.recipient-tag .remove:hover {
+    color: #1557b0;
+}
+
+#recipient, #cc, #bcc {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    flex: 1;
+    min-width: 150px;
+    padding: 4px 0;
+}
+
+#subject {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    flex: 1;
+    padding: 4px 0;
+}
+
+.compose-body-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fff;
+    flex-wrap: wrap;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding-right: 8px;
+    border-right: 1px solid #e0e0e0;
+    margin-right: 8px;
+}
+
+.toolbar-group:last-child {
+    border-right: none;
+    margin-right: 0;
+}
+
+.toolbar-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #5f6368;
+    transition: background 0.15s;
+}
+
+.toolbar-btn:hover {
+    background: #f1f3f4;
+}
+
+.toolbar-btn.active {
+    background: #e8f0fe;
+    color: #1a73e8;
+}
+
+.toolbar-select {
+    height: 32px;
+    padding: 4px 8px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 13px;
+    background: #fff;
+    color: #202124;
+    cursor: pointer;
+}
+
+#message {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 16px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+.compose-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-top: 1px solid #e0e0e0;
+    background: #fff;
+}
+
+.compose-actions-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.attach-btn {
+    padding: 8px 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    color: #1a73e8;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+}
+
+.attach-btn:hover {
+    background: #f8f9fa;
+}
+
+.compose-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 60px;
+    right: 16px;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 4px;
+}
+
+.autocomplete-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #202124;
+}
+
+.autocomplete-item:hover {
+    background: #f1f3f4;
+}
+
+#imagePreview {
+    padding: 16px;
+    border-top: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+.image-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+}
+
+.image-preview-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.image-preview-info {
+    flex: 1;
+}
+
+.image-preview-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 4px;
+}
+
+.image-preview-size {
+    font-size: 12px;
+    color: #5f6368;
+}
+
+.image-preview-remove {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #5f6368;
+    transition: background 0.15s;
+}
+
+.image-preview-remove:hover {
+    background: #f1f3f4;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="padding: 16px;">
+<div class="compose-container">
     {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
+    <div class="alert alert-error" style="margin: 16px;">{{ error }}</div>
     {% endif %}
     
     <form method="POST" action="{{ url_for('send_email') }}" enctype="multipart/form-data" id="emailForm">
         <div class="compose-header">
-            <div class="form-group" style="margin-bottom: 0; position: relative;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 12px; color: #5f6368; min-width: 40px;">To</span>
-                    <div class="recipient-input-wrapper" style="flex: 1;">
-                        <div id="recipientTags" class="recipient-tags"></div>
-                        <input type="text" id="recipient" name="recipient" placeholder="Recipients" autocomplete="off" style="border: none; border-bottom: 1px solid #e0e0e0; border-radius: 0; padding: 12px 0; width: 100%;">
-                    </div>
+            <div class="compose-header-row">
+                <span class="compose-label">To</span>
+                <div class="recipient-input-wrapper">
+                    <div id="recipientTags" class="recipient-tags"></div>
+                    <input type="text" id="recipient" name="recipient" placeholder="Recipients" autocomplete="off">
                 </div>
                 <div id="autocompleteDropdown" class="autocomplete-dropdown" style="display: none;"></div>
             </div>
-            <div class="form-group" style="margin-bottom: 0; position: relative;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 12px; color: #5f6368; min-width: 40px; cursor: pointer;" onclick="toggleCc()">Cc</span>
-                    <div class="recipient-input-wrapper" style="flex: 1;">
-                        <div id="ccTags" class="recipient-tags"></div>
-                        <input type="text" id="cc" name="cc" placeholder="Cc (optional)" autocomplete="off" style="border: none; border-bottom: 1px solid #e0e0e0; border-radius: 0; padding: 12px 0; width: 100%; display: none;">
-                    </div>
+            <div class="compose-header-row">
+                <span class="compose-label" onclick="toggleCc()">Cc</span>
+                <div class="recipient-input-wrapper">
+                    <div id="ccTags" class="recipient-tags"></div>
+                    <input type="text" id="cc" name="cc" placeholder="Cc (optional)" autocomplete="off" style="display: none;">
                 </div>
             </div>
-            <div class="form-group" style="margin-bottom: 0; position: relative;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 12px; color: #5f6368; min-width: 40px; cursor: pointer;" onclick="toggleBcc()">Bcc</span>
-                    <div class="recipient-input-wrapper" style="flex: 1;">
-                        <div id="bccTags" class="recipient-tags"></div>
-                        <input type="text" id="bcc" name="bcc" placeholder="Bcc (optional)" autocomplete="off" style="border: none; border-bottom: 1px solid #e0e0e0; border-radius: 0; padding: 12px 0; width: 100%; display: none;">
-                    </div>
+            <div class="compose-header-row">
+                <span class="compose-label" onclick="toggleBcc()">Bcc</span>
+                <div class="recipient-input-wrapper">
+                    <div id="bccTags" class="recipient-tags"></div>
+                    <input type="text" id="bcc" name="bcc" placeholder="Bcc (optional)" autocomplete="off" style="display: none;">
                 </div>
             </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <input type="text" id="subject" name="subject" placeholder="Subject" style="border: none; border-bottom: 1px solid #e0e0e0; border-radius: 0; padding: 12px 0;">
+            <div class="compose-header-row">
+                <span class="compose-label">Subject</span>
+                <input type="text" id="subject" name="subject" placeholder="Subject">
             </div>
         </div>
         
-        <div class="compose-body">
-            <textarea id="message" name="message" placeholder="Write your message here..." required style="border: none; min-height: 300px; padding: 16px; resize: none;"></textarea>
+        <div class="compose-body-wrapper">
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Bold">B</button>
+                    <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Italic">I</button>
+                    <button type="button" class="toolbar-btn" onclick="formatText('underline')" title="Underline">U</button>
+                </div>
+                <div class="toolbar-group">
+                    <select class="toolbar-select" id="fontSize" onchange="formatText('fontSize', this.value)" title="Font Size">
+                        <option value="">Size</option>
+                        <option value="12px">12px</option>
+                        <option value="14px" selected>14px</option>
+                        <option value="16px">16px</option>
+                        <option value="18px">18px</option>
+                        <option value="20px">20px</option>
+                        <option value="24px">24px</option>
+                    </select>
+                    <select class="toolbar-select" id="fontFamily" onchange="formatText('fontName', this.value)" title="Font Family">
+                        <option value="">Font</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Verdana">Verdana</option>
+                    </select>
+                </div>
+                <div class="toolbar-group">
+                    <button type="button" class="toolbar-btn" onclick="formatText('justifyLeft')" title="Align Left">⬅</button>
+                    <button type="button" class="toolbar-btn" onclick="formatText('justifyCenter')" title="Align Center">⬌</button>
+                    <button type="button" class="toolbar-btn" onclick="formatText('justifyRight')" title="Align Right">➡</button>
+                </div>
+                <div class="toolbar-group">
+                    <button type="button" class="toolbar-btn" onclick="formatText('insertUnorderedList')" title="Bullet List">•</button>
+                    <button type="button" class="toolbar-btn" onclick="formatText('insertOrderedList')" title="Numbered List">1.</button>
+                </div>
+            </div>
+            <div id="message" contenteditable="true" data-placeholder="Write your message here..."></div>
+            <textarea id="messageHidden" name="message" style="display: none;"></textarea>
         </div>
         
         <div class="compose-footer">
@@ -54,24 +384,15 @@
                     📎 Attach Image
                     <input type="file" id="imageUpload" name="image" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                 </label>
-                <span id="imageInfo" style="font-size: 12px; color: #5f6368; margin-left: 8px;"></span>
+                <span id="imageInfo" style="font-size: 12px; color: #5f6368;"></span>
             </div>
             <div class="compose-actions-right">
-                <a href="{{ url_for('dashboard') }}" class="btn" style="margin-right: 8px;">Cancel</a>
+                <a href="{{ url_for('dashboard') }}" class="btn">Cancel</a>
                 <button type="submit" class="btn btn-primary">Send</button>
             </div>
         </div>
         
-        <div id="imagePreview" style="padding: 16px; display: none;">
-            <div style="display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 8px; border-radius: 4px;">
-                <img id="previewImg" src="" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 4px;">
-                <div style="flex: 1;">
-                    <div id="previewName" style="font-size: 14px; font-weight: 500;"></div>
-                    <div id="previewSize" style="font-size: 12px; color: #5f6368;"></div>
-                </div>
-                <button type="button" onclick="removeImage()" style="background: none; border: none; color: #5f6368; cursor: pointer; font-size: 18px;">×</button>
-            </div>
-        </div>
+        <div id="imagePreview" style="display: none;"></div>
     </form>
 </div>
 
@@ -84,6 +405,38 @@ let allUsers = {{ usernames|tojson|safe }};
 let currentUser = '{{ session.username }}';
 
 allUsers = allUsers.filter(u => u !== currentUser);
+
+// ContentEditable placeholder
+const messageDiv = document.getElementById('message');
+messageDiv.addEventListener('focus', function() {
+    if (this.textContent.trim() === '') {
+        this.textContent = '';
+    }
+});
+messageDiv.addEventListener('blur', function() {
+    if (this.textContent.trim() === '') {
+        this.innerHTML = '';
+    }
+});
+
+// Format text functions
+function formatText(command, value = null) {
+    document.execCommand(command, false, value);
+    messageDiv.focus();
+}
+
+// Update hidden textarea before submit
+document.getElementById('emailForm').addEventListener('submit', function(e) {
+    if (recipients.length === 0) {
+        e.preventDefault();
+        alert('Please add at least one recipient');
+        return false;
+    }
+    document.getElementById('messageHidden').value = messageDiv.innerHTML;
+    document.getElementById('recipient').value = recipients.join(', ');
+    document.getElementById('cc').value = ccRecipients.join(', ');
+    document.getElementById('bcc').value = bccRecipients.join(', ');
+});
 
 function toggleCc() {
     const ccInput = document.getElementById('cc');
@@ -114,11 +467,29 @@ function handleImageUpload(event) {
     selectedImage = file;
     const reader = new FileReader();
     reader.onload = function(e) {
-        document.getElementById('previewImg').src = e.target.result;
-        document.getElementById('previewName').textContent = file.name;
-        document.getElementById('previewSize').textContent = formatFileSize(file.size);
-        document.getElementById('imagePreview').style.display = 'block';
+        const preview = document.getElementById('imagePreview');
+        preview.innerHTML = `
+            <div class="image-preview-item">
+                <img src="${e.target.result}" alt="Preview">
+                <div class="image-preview-info">
+                    <div class="image-preview-name">${file.name}</div>
+                    <div class="image-preview-size">${formatFileSize(file.size)}</div>
+                </div>
+                <button type="button" class="image-preview-remove" onclick="removeImage()">×</button>
+            </div>
+        `;
+        preview.style.display = 'block';
         document.getElementById('imageInfo').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+        
+        // Insert image into message
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        img.style.borderRadius = '4px';
+        img.style.margin = '8px 0';
+        messageDiv.appendChild(img);
+        messageDiv.focus();
     };
     reader.readAsDataURL(file);
 }
@@ -166,7 +537,7 @@ function updateRecipientTags() {
     recipients.forEach(username => {
         const tag = document.createElement('span');
         tag.className = 'recipient-tag';
-        tag.innerHTML = `${username} <span onclick="removeRecipient('${username}')" style="cursor: pointer; margin-left: 4px;">×</span>`;
+        tag.innerHTML = `${username} <span class="remove" onclick="removeRecipient('${username}')">×</span>`;
         recipientTags.appendChild(tag);
     });
 }
@@ -189,7 +560,7 @@ function updateCcTags() {
     ccRecipients.forEach(username => {
         const tag = document.createElement('span');
         tag.className = 'recipient-tag';
-        tag.innerHTML = `${username} <span onclick="removeCcRecipient('${username}')" style="cursor: pointer; margin-left: 4px;">×</span>`;
+        tag.innerHTML = `${username} <span class="remove" onclick="removeCcRecipient('${username}')">×</span>`;
         ccTags.appendChild(tag);
     });
 }
@@ -212,7 +583,7 @@ function updateBccTags() {
     bccRecipients.forEach(username => {
         const tag = document.createElement('span');
         tag.className = 'recipient-tag';
-        tag.innerHTML = `${username} <span onclick="removeBccRecipient('${username}')" style="cursor: pointer; margin-left: 4px;">×</span>`;
+        tag.innerHTML = `${username} <span class="remove" onclick="removeBccRecipient('${username}')">×</span>`;
         bccTags.appendChild(tag);
     });
 }
@@ -334,127 +705,5 @@ document.addEventListener('click', (e) => {
         hideAutocomplete();
     }
 });
-
-document.getElementById('emailForm').addEventListener('submit', function(e) {
-    if (recipients.length === 0) {
-        e.preventDefault();
-        alert('Please add at least one recipient');
-        return false;
-    }
-    recipientInput.value = recipients.join(', ');
-    ccInput.value = ccRecipients.join(', ');
-    bccInput.value = bccRecipients.join(', ');
-});
 </script>
-
-<style>
-.recipient-input-wrapper {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
-    min-height: 44px;
-}
-
-.recipient-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.recipient-tag {
-    background: #e8f0fe;
-    color: #1a73e8;
-    padding: 4px 8px;
-    border-radius: 16px;
-    font-size: 13px;
-    display: inline-flex;
-    align-items: center;
-}
-
-.recipient-tag span {
-    color: #1a73e8;
-    font-weight: bold;
-}
-
-#recipient, #cc, #bcc {
-    flex: 1;
-    min-width: 200px;
-}
-
-.autocomplete-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 40px;
-    right: 0;
-    background: white;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.autocomplete-item {
-    padding: 8px 16px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #202124;
-}
-
-.autocomplete-item:hover {
-    background: #f1f3f4;
-}
-
-.compose-header {
-    border-bottom: 1px solid #e0e0e0;
-    padding: 0 16px;
-}
-
-.compose-body {
-    min-height: 300px;
-}
-
-.compose-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    border-top: 1px solid #e0e0e0;
-}
-
-.compose-actions-left {
-    display: flex;
-    align-items: center;
-}
-
-.attach-btn {
-    padding: 8px 16px;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-    background: #fff;
-    color: #1a73e8;
-    font-size: 14px;
-    cursor: pointer;
-    display: inline-block;
-    transition: background 0.15s;
-}
-
-.attach-btn:hover {
-    background: #f8f9fa;
-}
-
-.compose-actions-right {
-    display: flex;
-    align-items: center;
-}
-
-.form-group input:focus {
-    border-bottom-color: #1a73e8;
-    border-bottom-width: 2px;
-    padding-bottom: 11px;
-}
-</style>
 {% endblock %}
