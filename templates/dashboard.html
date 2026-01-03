@@ -51,7 +51,7 @@
     <div class="empty-icon">📭</div>
     <h2>No messages</h2>
     <p>Your inbox is empty. Start a conversation!</p>
-    <a href="{{ url_for('send_email') }}" class="btn btn-primary" style="margin-top: 16px;">Compose</a>
+    <a href="{{ url_for('send_email') }}" class="btn btn-primary" style="margin-top: 16px;">Create Mail</a>
 </div>
 {% endif %}
 
@@ -68,6 +68,11 @@
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+.total-count {
+    font-weight: 500;
+    color: #202124;
 }
 
 .unread-badge {
@@ -91,6 +96,7 @@
     cursor: pointer;
     transition: background 0.1s;
     gap: 12px;
+    position: relative;
 }
 
 .email-item:hover {
@@ -99,6 +105,8 @@
 
 .email-item.unread {
     background: #fff;
+    border-left: 3px solid #1a73e8;
+    padding-left: 13px;
 }
 
 .email-item.unread:hover {

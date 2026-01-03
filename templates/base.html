@@ -28,16 +28,20 @@
             position: fixed;
             height: 100vh;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         .logo {
-            padding: 8px 12px;
-            font-size: 22px;
-            font-weight: 400;
-            color: #5f6368;
-            margin-bottom: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+        }
+        .logo img {
+            max-height: 50px;
+            width: auto;
+            object-fit: contain;
         }
         .logo-icon {
             width: 24px;
@@ -76,8 +80,8 @@
             text-align: center;
         }
         .compose-btn {
-            margin: 16px 8px;
-            padding: 12px 24px;
+            margin: 0 8px 16px 8px;
+            padding: 14px 24px;
             background: #1a73e8;
             color: white;
             border: none;
@@ -86,22 +90,21 @@
             font-weight: 500;
             cursor: pointer;
             box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
-            transition: box-shadow 0.15s;
+            transition: all 0.15s;
             text-decoration: none;
-            display: inline-block;
-            width: calc(100% - 16px);
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .compose-btn:hover {
             box-shadow: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
+            background: #1557b0;
         }
         .user-info {
             padding: 12px;
             border-top: 1px solid #e0e0e0;
             margin-top: auto;
-            position: absolute;
-            bottom: 0;
-            width: 260px;
             background: white;
         }
         .user-name {
@@ -228,7 +231,7 @@
             <div class="logo">
                 <img src="{{ url_for('static', filename='logo.png') }}" alt="Secure Mail">
             </div>
-            <a href="{{ url_for('send_email') }}" class="compose-btn">✏️ Compose</a>
+            <a href="{{ url_for('send_email') }}" class="compose-btn">✉️ Create Mail</a>
             <nav style="margin-top: 8px;">
                 <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
                     <span class="nav-item-icon">📥</span>
