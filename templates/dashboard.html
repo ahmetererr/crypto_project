@@ -17,7 +17,7 @@
 
 <div class="email-list">
     {% for msg in messages %}
-    <div class="email-item {% if not msg.is_read %}unread{% endif %}" onclick="window.location.href=&quot;{{ url_for('read_email', message_id=msg.id) }}&quot;">
+    <a href="{{ url_for('read_email', message_id=msg.id) }}" class="email-item {% if not msg.is_read %}unread{% endif %}" style="text-decoration: none; color: inherit;">
         <div class="email-checkbox">
             <input type="checkbox" onclick="event.stopPropagation();">
         </div>
@@ -97,6 +97,8 @@
     transition: background 0.1s;
     gap: 12px;
     position: relative;
+    text-decoration: none;
+    color: inherit;
 }
 
 .email-item:hover {
