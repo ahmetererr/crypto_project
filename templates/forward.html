@@ -1,85 +1,125 @@
 {% extends "base.html" %}
 
-{% block title %}Forward - Secure Email System{% endblock %}
+{% block title %}Forward - Secure Email{% endblock %}
+{% block page_title %}Forward{% endblock %}
 
 {% block content %}
-<h2>➡️ Forward</h2>
-
-{% if error %}
-<div class="alert alert-error">{{ error }}</div>
-{% endif %}
-
-<div class="original-email-preview">
-    <h3>Original Message:</h3>
-    <div class="preview-card">
+<div style="padding: 16px;">
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    
+    <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 16px; font-size: 14px; color: #5f6368;">
         <div><strong>From:</strong> {{ original_email.sender }}</div>
         <div><strong>Subject:</strong> {{ original_email.subject }}</div>
         <div><strong>Date:</strong> {{ original_email.created_at }}</div>
-        <div class="preview-message">{{ original_email.message[:200] }}{% if original_email.message|length > 200 %}...{% endif %}</div>
     </div>
+    
+    <form method="POST" action="{{ url_for('forward_email', message_id=original_email.id) }}" enctype="multipart/form-data" id="forwardForm">
+        <div class="form-group">
+            <input type="text" id="recipient" name="recipient" placeholder="To" required style="border: none; border-bottom: 1px solid #e0e0e0; border-radius: 0; padding: 12px 0;">
+        </div>
+        <div class="form-group">
+            <input type="text" id="subject" name="subject" value="{{ forward_subject }}" required style="border: none; border-bottom: 1px solid #e0e0e0; border-radius: 0; padding: 12px 0;">
+        </div>
+        <div class="form-group" style="margin-top: 16px;">
+            <textarea id="message" name="message" placeholder="Add a note (optional)" style="border: none; min-height: 200px; padding: 16px; resize: none;"></textarea>
+        </div>
+        
+        <div class="compose-footer">
+            <div class="compose-actions-left">
+                <label for="imageUpload" class="attach-btn">
+                    📎 Attach Image
+                    <input type="file" id="imageUpload" name="image" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                </label>
+                <span id="imageInfo" style="font-size: 12px; color: #5f6368; margin-left: 8px;"></span>
+            </div>
+            <div class="compose-actions-right">
+                <a href="{{ url_for('read_email', message_id=original_email.id) }}" class="btn" style="margin-right: 8px;">Cancel</a>
+                <button type="submit" class="btn btn-primary">Forward</button>
+            </div>
+        </div>
+        
+        <div id="imagePreview" style="padding: 16px; display: none;">
+            <div style="display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 8px; border-radius: 4px;">
+                <img id="previewImg" src="" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 4px;">
+                <div style="flex: 1;">
+                    <div id="previewName" style="font-size: 14px; font-weight: 500;"></div>
+                    <div id="previewSize" style="font-size: 12px; color: #5f6368;"></div>
+                </div>
+                <button type="button" onclick="removeImage()" style="background: none; border: none; color: #5f6368; cursor: pointer; font-size: 18px;">×</button>
+            </div>
+        </div>
+    </form>
 </div>
 
-<form method="POST" action="{{ url_for('forward_email', message_id=original_email.id) }}">
-    <div class="form-group">
-        <label for="recipient">To:</label>
-        <input type="text" id="recipient" name="recipient" placeholder="Enter recipient username" required>
-    </div>
-    <div class="form-group">
-        <label for="subject">Subject:</label>
-        <input type="text" id="subject" name="subject" value="{{ forward_subject }}" required>
-    </div>
-    <div class="form-group">
-        <label for="message">Additional Message (optional):</label>
-        <textarea id="message" name="message" placeholder="Add a note to the forwarded message (optional)"></textarea>
-    </div>
-    <div class="form-actions">
-        <button type="submit" class="btn btn-forward">➡️ Forward Email</button>
-        <a href="{{ url_for('read_email', message_id=original_email.id) }}" class="btn btn-secondary">← Back</a>
-    </div>
-</form>
+<script>
+let selectedImage = null;
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+        alert('Image size must be less than 5MB');
+        event.target.value = '';
+        return;
+    }
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        event.target.value = '';
+        return;
+    }
+    selectedImage = file;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('previewName').textContent = file.name;
+        document.getElementById('previewSize').textContent = formatFileSize(file.size);
+        document.getElementById('imagePreview').style.display = 'block';
+        document.getElementById('imageInfo').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+    };
+    reader.readAsDataURL(file);
+}
+function removeImage() {
+    selectedImage = null;
+    document.getElementById('imageUpload').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('imageInfo').textContent = '';
+}
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+</script>
 
 <style>
-.original-email-preview {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 25px;
-}
-
-.original-email-preview h3 {
-    color: #667eea;
-    margin-bottom: 15px;
-    font-size: 18px;
-}
-
-.preview-card {
-    background: white;
-    padding: 15px;
-    border-radius: 5px;
-    border-left: 4px solid #ffc107;
-}
-
-.preview-card div {
-    margin-bottom: 8px;
-    color: #666;
-}
-
-.preview-message {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid #e0e0e0;
-    font-style: italic;
-    color: #999;
-}
-
-.btn-forward {
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-}
-
-.form-actions {
+.compose-footer {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 16px;
+}
+.compose-actions-left, .compose-actions-right {
+    display: flex;
+    align-items: center;
+}
+.attach-btn {
+    padding: 8px 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    color: #1a73e8;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-block;
+}
+.attach-btn:hover {
+    background: #f8f9fa;
 }
 </style>
 {% endblock %}
-

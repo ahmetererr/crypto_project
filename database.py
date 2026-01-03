@@ -262,17 +262,17 @@ class Database:
         conn.close()
         return results
     
-    def mark_as_read(self, message_id: int) -> bool:
-        """Mark message as read"""
+    def mark_as_read(self, message_id) -> bool:
+        """Mark message as read (int for SQLite, str for Firebase)"""
         if self.db_type == 'firebase':
-            return self.firebase_db.mark_as_read(message_id)
+            return self.firebase_db.mark_as_read(str(message_id))
         
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             cursor.execute(
                 'UPDATE messages SET is_read = 1 WHERE id = ?',
-                (message_id,)
+                (int(message_id),)
             )
             conn.commit()
             conn.close()
@@ -281,10 +281,10 @@ class Database:
             print(f"Error marking message as read: {e}")
             return False
     
-    def get_message_by_id(self, message_id: int) -> Optional[Tuple]:
-        """Get message by ID"""
+    def get_message_by_id(self, message_id) -> Optional[Tuple]:
+        """Get message by ID (int for SQLite, str for Firebase)"""
         if self.db_type == 'firebase':
-            return self.firebase_db.get_message_by_id(message_id)
+            return self.firebase_db.get_message_by_id(str(message_id))
         
         try:
             conn = self.get_connection()
@@ -293,7 +293,7 @@ class Database:
                 '''SELECT id, sender, recipient, encrypted_content, encrypted_symmetric_key,
                    message_hash, digital_signature, is_read, subject, created_at
                    FROM messages WHERE id = ?''',
-                (message_id,)
+                (int(message_id),)
             )
             result = cursor.fetchone()
             conn.close()

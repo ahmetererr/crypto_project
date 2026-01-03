@@ -1,164 +1,139 @@
 {% extends "base.html" %}
 
-{% block title %}Read Email - Secure Email System{% endblock %}
+{% block title %}{{ email.subject if email else 'Read Email' }} - Secure Email{% endblock %}
+{% block page_title %}{{ email.subject if email else 'Email' }}{% endblock %}
 
 {% block content %}
-<h2>📧 Read Email</h2>
-
 {% if error %}
-<div class="alert alert-error">{{ error }}</div>
-<a href="{{ url_for('dashboard') }}" class="btn">Back to Inbox</a>
+<div style="padding: 16px;">
+    <div class="alert alert-error">{{ error }}</div>
+    <a href="{{ url_for('dashboard') }}" class="btn">Back to Inbox</a>
+</div>
 {% elif email %}
-<div class="email-container">
-    <div class="email-header-card">
-        <div class="email-field-row">
-            <div class="email-field">
-                <strong>From:</strong> {{ email.sender }}
+<div style="padding: 16px;">
+    <div class="email-header">
+        <div class="email-subject-line">
+            <h1 style="font-size: 22px; font-weight: 400; color: #202124; margin-bottom: 16px;">{{ email.subject }}</h1>
+        </div>
+        <div class="email-meta">
+            <div class="email-from">
+                <span style="font-weight: 500; color: #202124;">{{ email.sender }}</span>
+                <span style="color: #5f6368; margin-left: 8px;">&lt;{{ email.sender }}@secure.email&gt;</span>
             </div>
-            <div class="email-field">
-                <strong>To:</strong> {{ email.recipient }}
+            <div class="email-to-date">
+                <span style="color: #5f6368; font-size: 14px;">to me</span>
+                <span style="color: #5f6368; font-size: 14px; margin-left: 16px;">{{ email.created_at }}</span>
             </div>
         </div>
-        <div class="email-field-row">
-            <div class="email-field">
-                <strong>Subject:</strong> {{ email.subject }}
-            </div>
-            <div class="email-field">
-                <strong>Date:</strong> {{ email.created_at }}
-            </div>
-        </div>
-        <div class="verification-status">
-            <div class="verification-item">
-                <strong>Integrity:</strong> 
-                {% if email.integrity_verified %}
-                <span class="verification-badge verified">✓ Verified</span>
-                {% else %}
-                <span class="verification-badge not-verified">✗ Failed</span>
-                {% endif %}
-            </div>
-            <div class="verification-item">
-                <strong>Signature:</strong> 
-                {% if email.signature_verified %}
-                <span class="verification-badge verified">✓ Verified</span>
-                {% else %}
-                <span class="verification-badge not-verified">✗ Failed</span>
-                {% endif %}
-            </div>
+        <div class="verification-badges">
+            {% if email.integrity_verified %}
+            <span class="badge verified">✓ Integrity Verified</span>
+            {% else %}
+            <span class="badge not-verified">✗ Integrity Failed</span>
+            {% endif %}
+            {% if email.signature_verified %}
+            <span class="badge verified">✓ Signature Verified</span>
+            {% else %}
+            <span class="badge not-verified">✗ Signature Failed</span>
+            {% endif %}
         </div>
     </div>
     
     <div class="email-body">
-        <div class="email-body-content">{{ email.message }}</div>
+        <div class="email-content">{{ email.message|safe }}</div>
     </div>
     
-    <div class="email-actions">
-        <a href="{{ url_for('reply_email', message_id=email.id) }}" class="btn btn-reply">↩️ Reply</a>
-        <a href="{{ url_for('forward_email', message_id=email.id) }}" class="btn btn-forward">➡️ Forward</a>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to Inbox</a>
+    <div class="email-actions-bar">
+        <a href="{{ url_for('reply_email', message_id=email.id) }}" class="action-btn">Reply</a>
+        <a href="{{ url_for('forward_email', message_id=email.id) }}" class="action-btn">Forward</a>
+        <a href="{{ url_for('dashboard') }}" class="action-btn">Back to Inbox</a>
     </div>
 </div>
 {% endif %}
 
 <style>
-.email-container {
-    max-width: 900px;
-    margin: 0 auto;
+.email-header {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
 }
 
-.email-header-card {
-    background: white;
-    border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+.email-meta {
+    margin-top: 8px;
+    font-size: 14px;
 }
 
-.email-field-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 15px;
+.email-from {
+    margin-bottom: 4px;
 }
 
-.email-field {
-    color: #333;
+.email-to-date {
+    margin-top: 4px;
 }
 
-.email-field strong {
-    color: #667eea;
-    display: inline-block;
-    min-width: 80px;
-}
-
-.verification-status {
+.verification-badges {
+    margin-top: 12px;
     display: flex;
-    gap: 30px;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 2px solid #e0e0e0;
+    gap: 8px;
 }
 
-.verification-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.verification-badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 20px;
+.badge {
+    padding: 4px 12px;
+    border-radius: 16px;
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 500;
 }
 
-.verified {
-    background: #d4edda;
-    color: #155724;
+.badge.verified {
+    background: #e6f4ea;
+    color: #137333;
 }
 
-.not-verified {
-    background: #f8d7da;
-    color: #721c24;
+.badge.not-verified {
+    background: #fce8e6;
+    color: #c5221f;
 }
 
 .email-body {
-    background: white;
-    border-radius: 10px;
-    padding: 30px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 16px 0;
     min-height: 200px;
 }
 
-.email-body-content {
+.email-content {
     white-space: pre-wrap;
     word-wrap: break-word;
     line-height: 1.6;
-    color: #333;
-    font-size: 15px;
+    color: #202124;
+    font-size: 14px;
 }
 
-.email-actions {
+.email-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 8px 0;
+}
+
+.email-actions-bar {
     display: flex;
-    gap: 15px;
-    justify-content: center;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e0e0;
 }
 
-.btn-reply {
-    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+.action-btn {
+    padding: 8px 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    color: #1a73e8;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background 0.15s;
 }
 
-.btn-forward {
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-}
-
-.btn-reply:hover {
-    background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
-}
-
-.btn-forward:hover {
-    background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+.action-btn:hover {
+    background: #f8f9fa;
 }
 </style>
 {% endblock %}

@@ -5,6 +5,7 @@ Allows remote access to the email system via REST API and web interface
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from email_system import EmailSystem
 import os
+import base64
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secret key for sessions
@@ -84,6 +85,29 @@ def send_email():
         subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
         
+        # Handle image upload (if any)
+        if 'image' in request.files:
+            image_file = request.files['image']
+            if image_file and image_file.filename:
+                # Check file size (5MB limit)
+                image_file.seek(0, os.SEEK_END)
+                file_size = image_file.tell()
+                image_file.seek(0)
+                
+                if file_size > 5 * 1024 * 1024:  # 5MB
+                    return render_template('send.html', error='Image size must be less than 5MB')
+                
+                # Check if it's an image
+                if not image_file.content_type.startswith('image/'):
+                    return render_template('send.html', error='Please upload an image file')
+                
+                # Convert image to base64 and embed in message
+                import base64
+                image_data = image_file.read()
+                image_base64 = base64.b64encode(image_data).decode('utf-8')
+                image_tag = f'\n\n<img src="data:{image_file.content_type};base64,{image_base64}" alt="{image_file.filename}" style="max-width: 100%; height: auto;">'
+                message += image_tag
+        
         if not recipient or not message:
             return render_template('send.html', error='Recipient and message are required')
         
@@ -128,6 +152,25 @@ def reply_email(message_id):
         reply_message = request.form.get('message', '').strip()
         subject = request.form.get('subject', '').strip()
         
+        # Handle image upload
+        if 'image' in request.files:
+            image_file = request.files['image']
+            if image_file and image_file.filename:
+                image_file.seek(0, os.SEEK_END)
+                file_size = image_file.tell()
+                image_file.seek(0)
+                
+                if file_size > 5 * 1024 * 1024:
+                    return render_template('reply.html', original_email=original_email, error='Image size must be less than 5MB')
+                
+                if not image_file.content_type.startswith('image/'):
+                    return render_template('reply.html', original_email=original_email, error='Please upload an image file')
+                
+                image_data = image_file.read()
+                image_base64 = base64.b64encode(image_data).decode('utf-8')
+                image_tag = f'\n\n<img src="data:{image_file.content_type};base64,{image_base64}" alt="{image_file.filename}" style="max-width: 100%; height: auto;">'
+                reply_message += image_tag
+        
         if not reply_message:
             return render_template('reply.html', original_email=original_email, error='Message is required')
         
@@ -164,6 +207,25 @@ def forward_email(message_id):
         recipient = request.form.get('recipient', '').strip()
         forward_message = request.form.get('message', '').strip()
         subject = request.form.get('subject', '').strip()
+        
+        # Handle image upload
+        if 'image' in request.files:
+            image_file = request.files['image']
+            if image_file and image_file.filename:
+                image_file.seek(0, os.SEEK_END)
+                file_size = image_file.tell()
+                image_file.seek(0)
+                
+                if file_size > 5 * 1024 * 1024:
+                    return render_template('forward.html', original_email=original_email, error='Image size must be less than 5MB')
+                
+                if not image_file.content_type.startswith('image/'):
+                    return render_template('forward.html', original_email=original_email, error='Please upload an image file')
+                
+                image_data = image_file.read()
+                image_base64 = base64.b64encode(image_data).decode('utf-8')
+                image_tag = f'\n\n<img src="data:{image_file.content_type};base64,{image_base64}" alt="{image_file.filename}" style="max-width: 100%; height: auto;">'
+                forward_message += image_tag
         
         if not recipient:
             return render_template('forward.html', original_email=original_email, error='Recipient is required')

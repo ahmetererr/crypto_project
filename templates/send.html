@@ -1,40 +1,157 @@
 {% extends "base.html" %}
 
-{% block title %}Send Email - Secure Email System{% endblock %}
+{% block title %}Compose - Secure Email{% endblock %}
+{% block page_title %}Compose{% endblock %}
 
 {% block content %}
-<h2>Send Email</h2>
-{% if error %}
-<div class="alert alert-error">{{ error }}</div>
-{% endif %}
-{% if success %}
-<div class="alert alert-success">{{ success }}</div>
-{% endif %}
+<div style="padding: 16px;">
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('send_email') }}" enctype="multipart/form-data" id="emailForm">
+        <div class="compose-header">
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" id="recipient" name="recipient" placeholder="To" required style="border: none; border-bottom: 1px solid #e0e0e0; border-radius: 0; padding: 12px 0;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" id="subject" name="subject" placeholder="Subject" style="border: none; border-bottom: 1px solid #e0e0e0; border-radius: 0; padding: 12px 0;">
+            </div>
+        </div>
+        
+        <div class="compose-body">
+            <textarea id="message" name="message" placeholder="Compose email" required style="border: none; min-height: 300px; padding: 16px; resize: none;"></textarea>
+        </div>
+        
+        <div class="compose-footer">
+            <div class="compose-actions-left">
+                <label for="imageUpload" class="attach-btn">
+                    📎 Attach Image
+                    <input type="file" id="imageUpload" name="image" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                </label>
+                <span id="imageInfo" style="font-size: 12px; color: #5f6368; margin-left: 8px;"></span>
+            </div>
+            <div class="compose-actions-right">
+                <a href="{{ url_for('dashboard') }}" class="btn" style="margin-right: 8px;">Cancel</a>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+        
+        <div id="imagePreview" style="padding: 16px; display: none;">
+            <div style="display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 8px; border-radius: 4px;">
+                <img id="previewImg" src="" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 4px;">
+                <div style="flex: 1;">
+                    <div id="previewName" style="font-size: 14px; font-weight: 500;"></div>
+                    <div id="previewSize" style="font-size: 12px; color: #5f6368;"></div>
+                </div>
+                <button type="button" onclick="removeImage()" style="background: none; border: none; color: #5f6368; cursor: pointer; font-size: 18px;">×</button>
+            </div>
+        </div>
+    </form>
+</div>
 
-<form method="POST" action="{{ url_for('send_email') }}">
-    <div class="form-group">
-        <label for="recipient">To:</label>
-        <input type="text" id="recipient" name="recipient" placeholder="Enter recipient username" required>
-    </div>
-    <div class="form-group">
-        <label for="subject">Subject:</label>
-        <input type="text" id="subject" name="subject" placeholder="Email subject (optional)">
-    </div>
-    <div class="form-group">
-        <label for="message">Message:</label>
-        <textarea id="message" name="message" placeholder="Type your message here..." required></textarea>
-    </div>
-    <div class="form-actions">
-        <button type="submit" class="btn">✉️ Send Email</button>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Cancel</a>
-    </div>
-</form>
+<script>
+let selectedImage = null;
+
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+        alert('Image size must be less than 5MB');
+        event.target.value = '';
+        return;
+    }
+    
+    // Check if it's an image
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        event.target.value = '';
+        return;
+    }
+    
+    selectedImage = file;
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('previewName').textContent = file.name;
+        document.getElementById('previewSize').textContent = formatFileSize(file.size);
+        document.getElementById('imagePreview').style.display = 'block';
+        document.getElementById('imageInfo').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeImage() {
+    selectedImage = null;
+    document.getElementById('imageUpload').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('imageInfo').textContent = '';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Image will be handled server-side via form submission
+</script>
 
 <style>
-.form-actions {
+.compose-header {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0 16px;
+}
+
+.compose-body {
+    min-height: 300px;
+}
+
+.compose-footer {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.compose-actions-left {
+    display: flex;
+    align-items: center;
+}
+
+.attach-btn {
+    padding: 8px 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    color: #1a73e8;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-block;
+    transition: background 0.15s;
+}
+
+.attach-btn:hover {
+    background: #f8f9fa;
+}
+
+.compose-actions-right {
+    display: flex;
+    align-items: center;
+}
+
+.form-group input:focus {
+    border-bottom-color: #1a73e8;
+    border-bottom-width: 2px;
+    padding-bottom: 11px;
 }
 </style>
 {% endblock %}
-
